@@ -54,9 +54,53 @@ pub fn do_sum_mul(input: String) -> u32 {
         .sum::<u32>()
 }
 
+/// As you scan through the corrupted memory, you notice that
+/// some of the conditional statements are also still intact.
+/// If you handle some of the uncorrupted conditional statements
+/// in the program, you might be able to get an even more accurate result.
+///
+/// There are two new instructions you'll need to handle:
+///
+/// The do() instruction enables future mul instructions.
+/// The don't() instruction disables future mul instructions.
+/// Only the most recent do() or don't() instruction applies.
+/// At the beginning of the program, mul instructions are enabled.
+///
+/// For example:
+///
+/// `xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))`
+/// This corrupted memory is similar to the example from before, but this time
+/// the `mul(5,5)` and `mul(11,8)` instructions are disabled because there is
+/// a `don't()` instruction before them. The other mul instructions function normally,
+/// including the one at the end that gets re-enabled by a `do()` instruction.
+///
+/// This time, the sum of the results is `48` `(2*4 + 8*5)`.
+///
+/// Handle the new instructions; what do you get if you add up all
+/// of the results of just the enabled multiplications?
+pub fn do_sum_mul_with_do(input: String) -> u32 {
+    // Split by `don't()`
+    let split_input_dont: Vec<&str> = input.split("don't()").collect();
+
+    // Initialize a vector for `do()` split
+    let mut split_input_do: Vec<&str> = Vec::new();
+
+    // Add the first element until `don't()` to the vector
+    split_input_do.push(split_input_dont.first().unwrap());
+
+    // Add the elements after `do()` and before the next `don't()` to the vector
+    for s in split_input_dont.iter().skip(1) {
+        s.split("do()").skip(1).for_each(|e| split_input_do.push(e));
+    }
+
+    // Sum of multiply of the substring of input
+    do_sum_mul(split_input_do.concat())
+}
+
 fn main() {
     let input: String = fs::read_to_string("input.txt").expect("Could not read the puzzle input");
-    println!("Sum: {}", do_sum_mul(input));
+    println!("Sum: {}", do_sum_mul(input.clone()));
+    println!("Sum with do: {}", do_sum_mul_with_do(input.clone()));
 }
 
 #[cfg(test)]
@@ -72,5 +116,10 @@ mod tests {
     }
 
     #[test]
-    fn given_test_part_two() {}
+    fn given_test_part_two() {
+        let input: String =
+            fs::read_to_string("test_input.txt").expect("Could not read the puzzle input");
+        let e: u32 = 48;
+        assert_eq!(e, do_sum_mul_with_do(input))
+    }
 }
